@@ -1,0 +1,227 @@
+import pandas as pd
+import numpy as np
+
+print("="*70)
+print("👥 EMPLOYEE ANALYSIS SYSTEM - HR ANALYTICS")
+print("="*70)
+
+# ============================================
+# STEP 1: Multiple DataFrames (Real scenario!)
+# ============================================
+
+# DataFrame 1: Employee Basic Info
+employees = pd.DataFrame({
+    "emp_id": [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+    "name": ["Ali", "Sara", "Ahmed", "Fatima", "Hassan", 
+             "Zara", "Usman", "Ayesha", "Bilal", "Hina"],
+    "department": ["IT", "HR", "IT", "Finance", "IT", 
+                   "HR", "Finance", "IT", "HR", "Finance"],
+    "join_year": [2020, 2019, 2021, 2018, 2022, 
+                  2020, 2019, 2021, 2020, 2018]
+})
+
+# DataFrame 2: Salary Information
+salaries = pd.DataFrame({
+    "emp_id": [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+    "salary": [50000, 45000, 48000, 60000, 42000, 
+               47000, 58000, 46000, 44000, 62000],
+    "bonus": [5000, 4000, 4500, 8000, 3500, 
+              4200, 7000, 4300, 4100, 8500]
+})
+
+# DataFrame 3: Performance Ratings
+performance = pd.DataFrame({
+    "emp_id": [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+    "rating": [4.5, 4.2, 4.7, 4.8, 4.0, 
+               4.3, 4.6, 4.4, 4.1, 4.9]
+})
+
+print("\n📋 DATASET 1 - Employee Info:")
+print(employees)
+
+print("\n💰 DATASET 2 - Salaries:")
+print(salaries)
+
+print("\n⭐ DATASET 3 - Performance:")
+print(performance)
+
+# ============================================
+# STEP 2: MERGE All Data (KEY CONCEPT!)
+# ============================================
+
+# Merge step 1: employees + salaries
+df = pd.merge(employees, salaries, on="emp_id")
+print("\n🔗 After merging employees + salaries:")
+print(df)
+
+# Merge step 2: add performance
+df = pd.merge(df, performance, on="emp_id")
+print("\n🔗 Complete merged data:")
+print(df)
+
+# Calculate total compensation
+df["total_compensation"] = df["salary"] + df["bonus"]
+
+print("\n💵 With Total Compensation:")
+print(df[["name", "salary", "bonus", "total_compensation"]])
+
+# ============================================
+# STEP 3: Overall Company Statistics
+# ============================================
+
+print("\n" + "="*70)
+print("📊 COMPANY-WIDE STATISTICS")
+print("="*70)
+
+total_employees = len(df)
+avg_salary = df["salary"].mean()
+total_payroll = df["total_compensation"].sum()
+avg_rating = df["rating"].mean()
+
+print(f"👥 Total Employees: {total_employees}")
+print(f"💰 Average Salary: Rs. {avg_salary:,.0f}")
+print(f"💵 Total Payroll: Rs. {total_payroll:,.0f}")
+print(f"⭐ Average Performance: {avg_rating:.2f}/5.0")
+print(f"📅 Avg Experience: {2024 - df['join_year'].mean():.1f} years")
+
+# ============================================
+# STEP 4: Department-Wise Analysis (GROUPBY + AGG!)
+# ============================================
+
+print("\n" + "="*70)
+print("🏢 DEPARTMENT-WISE ANALYSIS")
+print("="*70)
+
+# Group by department with multiple aggregations
+dept_stats = df.groupby("department").agg({
+    "name": "count",              # Count employees
+    "salary": "mean",             # Average salary
+    "total_compensation": "sum",  # Total budget
+    "rating": "mean"              # Average performance
+}).round(2)
+
+# Rename columns for clarity
+dept_stats.columns = ["Employees", "Avg Salary", "Total Budget", "Avg Rating"]
+
+print(dept_stats)
+
+# Calculate department budget percentage
+total_budget = df["total_compensation"].sum()
+
+print("\n💰 Department Budget Distribution:")
+for dept in df["department"].unique():
+    dept_budget = df[df["department"] == dept]["total_compensation"].sum()
+    percentage = (dept_budget / total_budget) * 100
+    print(f"{dept}: Rs. {dept_budget:,} ({percentage:.1f}%)")
+
+# ============================================
+# STEP 5: Top Performers
+# ============================================
+
+print("\n" + "="*70)
+print("🏆 TOP 5 EMPLOYEES")
+print("="*70)
+
+# Top 5 by total compensation
+top_earners = df.nlargest(5, "total_compensation")
+
+print("💰 HIGHEST EARNERS:")
+for idx, row in top_earners.iterrows():
+    print(f"{idx+1}. {row['name']} ({row['department']})")
+    print(f"   Salary: Rs. {row['salary']:,} + Bonus: Rs. {row['bonus']:,}")
+    print(f"   Total: Rs. {row['total_compensation']:,}")
+    print()
+
+# Top 5 by performance
+top_performers = df.nlargest(5, "rating")
+
+print("⭐ BEST PERFORMERS:")
+for idx, row in top_performers.iterrows():
+    print(f"{idx+1}. {row['name']} - Rating: {row['rating']}/5.0 ({row['department']})")
+
+# ============================================
+# STEP 6: Salary Insights
+# ============================================
+
+print("\n" + "="*70)
+print("💡 SALARY INSIGHTS")
+print("="*70)
+
+# Salary ranges
+low_salary = df[df["salary"] < 45000]
+mid_salary = df[(df["salary"] >= 45000) & (df["salary"] < 55000)]
+high_salary = df[df["salary"] >= 55000]
+
+print(f"Low Range (<45k): {len(low_salary)} employees")
+print(f"Mid Range (45k-55k): {len(mid_salary)} employees")
+print(f"High Range (>55k): {len(high_salary)} employees")
+
+# Highest vs Lowest
+highest_paid = df.nlargest(1, "salary").iloc[0]
+lowest_paid = df.nsmallest(1, "salary").iloc[0]
+
+print(f"\n💰 Highest Paid: {highest_paid['name']} - Rs. {highest_paid['salary']:,}")
+print(f"💵 Lowest Paid: {lowest_paid['name']} - Rs. {lowest_paid['salary']:,}")
+
+salary_gap = highest_paid["salary"] - lowest_paid["salary"]
+print(f"📊 Salary Gap: Rs. {salary_gap:,}")
+
+# ============================================
+# STEP 7: Experience Analysis
+# ============================================
+
+print("\n" + "="*70)
+print("📅 EXPERIENCE ANALYSIS")
+print("="*70)
+
+# Calculate years of experience
+df["experience"] = 2024 - df["join_year"]
+
+# Group by experience
+exp_groups = df.groupby("experience")["name"].count()
+
+print("Experience Distribution:")
+for years, count in exp_groups.items():
+    print(f"{years} years: {count} employees")
+
+# Correlation between experience and salary
+print("\n💡 Experience vs Salary:")
+exp_salary = df.groupby("experience")["salary"].mean().round(0)
+for years, avg_sal in exp_salary.items():
+    print(f"{years} years → Avg Salary: Rs. {avg_sal:,.0f}")
+
+# ============================================
+# STEP 8: HR Recommendations
+# ============================================
+
+print("\n" + "="*70)
+print("🎯 HR RECOMMENDATIONS")
+print("="*70)
+
+# Under-compensated high performers
+undervalued = df[(df["rating"] >= 4.5) & (df["salary"] < 50000)]
+
+if len(undervalued) > 0:
+    print("⚠️  HIGH PERFORMERS WITH LOW SALARY:")
+    for idx, row in undervalued.iterrows():
+        print(f"  • {row['name']} ({row['department']})")
+        print(f"    Rating: {row['rating']}/5.0 | Salary: Rs. {row['salary']:,}")
+        print(f"    💡 Recommend: Salary review")
+        print()
+
+# Long tenure employees
+veterans = df[df["experience"] >= 5]
+if len(veterans) > 0:
+    print(f"🏅 {len(veterans)} employees with 5+ years experience")
+    print("   Consider: Retention bonuses, promotions")
+
+# Department imbalance
+dept_counts = df["department"].value_counts()
+max_dept = dept_counts.idxmax()
+min_dept = dept_counts.idxmin()
+print(f"\n📊 Largest Department: {max_dept} ({dept_counts[max_dept]} employees)")
+print(f"📊 Smallest Department: {min_dept} ({dept_counts[min_dept]} employees)")
+
+print("\n" + "="*70)
+print("✅ EMPLOYEE ANALYSIS COMPLETE!")
+print("="*70)
